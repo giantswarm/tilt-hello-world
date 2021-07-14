@@ -1,0 +1,42 @@
+local_resource(
+  'example-go-compile',
+  'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/tilt-example-go ./',
+  deps=['./main.go'])
+
+# If you'd see the logs in the Tilt UI, you could see that on every code change we are:
+#   - compiling the app.
+#   - building the docker image.
+#   - pushing the docker image to a registry.
+#   - creating a new pod with the new image tag.
+#
+# This works but it can take a while if your application is bigger.
+# Tilt supports hot reloading files inside a running container so we don't have to do all those steps.
+# We only need to
+#   - compile our application.
+#   - copy it to already running container.
+#   - restart the process running the binary inside the container.
+#
+# We can achieve this with a Tilt extension called `docker_build_with_restart`.
+#
+# For more on Extensions, see: https://docs.tilt.dev/extensions.html
+load('ext://restart_process', 'docker_build_with_restart')
+
+docker_build_with_restart(
+  'example-go-image',
+  '.',
+  entrypoint=['/app/tilt-example-go'],
+  dockerfile='deployments/Dockerfile',
+  only=[
+    './build/tilt-example-go',
+    './web',
+  ],
+  live_update=[
+    sync('./build/tilt-example-go', '/app/tilt-example-go'),
+    sync('./web', '/app/web'),
+  ],
+)
+
+# Finally, our old good friends.
+k8s_yaml('deployments/kubernetes.yaml')
+k8s_resource('example-go', port_forwards=8000,
+             resource_deps=['example-go-compile'])

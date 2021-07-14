@@ -1,0 +1,27 @@
+# The Tiltfile uses the Starlark programming language.
+#
+# Starlark (formerly known as Skylark) is a language intended for use as a configuration language.
+# It was designed for the Bazel build system
+# https://github.com/bazelbuild/starlark
+
+# Define a dictionary
+people = {
+    "Alice": 22,
+    "Bob": 40,
+    "Charlie": 55,
+    "Dave": 14,
+}
+
+names = ", ".join(people.keys())  # Alice, Bob, Charlie, Dave
+
+# Define a function
+def greet(name):
+    """Return a greeting."""
+    return "Hello {}!".format(name)
+
+greeting = greet(names)
+print(greeting)
+
+above30 = [name for name, age in people.items() if age >= 30]
+
+print("{} people are above 30.".format(len(above30)))

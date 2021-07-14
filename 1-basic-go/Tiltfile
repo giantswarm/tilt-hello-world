@@ -1,0 +1,31 @@
+# A Tilt resource is any bundle of work managed by Tilt.
+# This could be a container image, k8s resources, a local command, etc.
+# Tilt will watch these resources continuously and rebuild them automagically when necessary.
+
+# Let's define two Tilt resources now
+#   - our application Docker image.
+#   - a kubernetes deployment running that Docker image.
+
+# First let's define the resource for our application Docker image
+docker_build(
+  'example-go-image',
+  '.',
+  dockerfile='deployments/Dockerfile')
+
+# The following invocation
+#   docker_build('quay.io/giantswarm/example-go-image', '.', dockerfile='deployments/Dockerfile')
+#
+# is roughly equivalent to the shell call
+#   docker build -t quay.io/giantswarm/example-go-image . -f deployments/Dockerfile
+
+# And finally we define another Tilt resource for the k8s Deployment to run our app.
+k8s_yaml('deployments/kubernetes.yaml')
+
+# The `k8s_yaml` function feels like running `kubectl apply -f`.
+# But Tilt processes the yaml contents before applying them.
+# And if this Deployment uses the same image that we created above, Tilt is able to know
+# that there is a dependency between them.
+# Here we passed raw yaml, but there are Tilt built-in functions to run `kustomize` or `helm`.
+
+# After deploying it, we port-forward it so we can access it locally.
+k8s_resource('example-go', port_forwards=8000)
